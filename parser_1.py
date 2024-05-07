@@ -12,8 +12,10 @@ Overall Description:
 
 
 # Imports
-from nltk.stem import PorterStemmer
-from functools import reduce
+
+import nltk
+nltk.download('wordnet')
+from nltk.stem import WordNetLemmatizer
 import spacy
 from urllib.error import HTTPError, URLError
 from bs4 import BeautifulSoup
@@ -46,19 +48,12 @@ def createDocument(col,doc):
 This is our own custom built lemmatizer to combine stem words. it works by using a prebuilt model via spAcy. 
 '''
 def custom_lemmatizer(text):
-    # Load the spaCy English model
-    nlp = spacy.load('en_core_web_sm')
+    wnl = WordNetLemmatizer()
+    lemmatized = []
+    for word in text:
+        lemmatized.append(wnl.lemmatize(word))
 
-    # Process the text using spaCy
-    doc = nlp(text)
-
-    # Extract lemmatized tokens
-    lemmatized_tokens = [token.lemma_ for token in doc]
-
-    # Join the lemmatized tokens into a sentence
-    lemmatized_text = ' '.join(lemmatized_tokens)
-
-    return lemmatized_text
+    return lemmatized
 
 
 '''
@@ -76,6 +71,7 @@ def custom_tokenizer(text):
     tokens = [token.lower() for token in tokens if token.lower() not in ENGLISH_STOP_WORDS]  # Remove stopwords
     #doc = nlp(sentence)
     #lemmatized_tokens = [token.lemma_ for token in doc]
+    tokens = custom_lemmatizer(tokens)
 
     return tokens
 
@@ -128,9 +124,9 @@ def run(db, url):
 			# TFIDF Calculations and tokenization for data storage in next steps: 
             tfidf_vectorizer = TfidfVectorizer(stop_words = 'english')
             # call custom lemmatizer to combine stems:
-            words = custom_lemmatizer(text)
+            #words = custom_lemmatizer(text)
             # send the stemmed text to our custom tokenizer for the matrix.
-            tfidf_matrix = tfidf_vectorizer.fit_transform(custom_tokenizer(words))
+            tfidf_matrix = tfidf_vectorizer.fit_transform(custom_tokenizer(text))
             
             tokens = tfidf_vectorizer.get_feature_names_out()
 
