@@ -12,6 +12,9 @@ Overall Description:
 
 
 # Imports
+from nltk.stem import PorterStemmer
+from functools import reduce
+import spacy
 from urllib.error import HTTPError, URLError
 from bs4 import BeautifulSoup
 import re
@@ -40,15 +43,40 @@ def createDocument(col,doc):
     return
 
 '''
+This is our own custom built lemmatizer to combine stem words. it works by using a prebuilt model via spAcy. 
+'''
+def custom_lemmatizer(text):
+    # Load the spaCy English model
+    nlp = spacy.load('en_core_web_sm')
+
+    # Process the text using spaCy
+    doc = nlp(text)
+
+    # Extract lemmatized tokens
+    lemmatized_tokens = [token.lemma_ for token in doc]
+
+    # Join the lemmatized tokens into a sentence
+    lemmatized_text = ' '.join(lemmatized_tokens)
+
+    return lemmatized_text
+
+
+'''
 We could not get the SK-Learn tokenizer to work the way we intended it to, so 
 we designed our own. This tokenizer works by taking in the text from any given website,
 splitting into dedicated words, and removing all stopwords using the SK learn pre-defined
 stopword library. 
 '''
+
 def custom_tokenizer(text):
     #ENGLISH_STOP_WORDS = sklearn
+    #nlp = spacy.load('en_core_web_sm')
+    #text = nlp(text)
     tokens = text.split()  # Split text into tokens
     tokens = [token.lower() for token in tokens if token.lower() not in ENGLISH_STOP_WORDS]  # Remove stopwords
+    #doc = nlp(sentence)
+    #lemmatized_tokens = [token.lemma_ for token in doc]
+
     return tokens
 
 
@@ -99,7 +127,11 @@ def run(db, url):
             
 			# TFIDF Calculations and tokenization for data storage in next steps: 
             tfidf_vectorizer = TfidfVectorizer(stop_words = 'english')
-            tfidf_matrix = tfidf_vectorizer.fit_transform(custom_tokenizer(text))
+            # call custom lemmatizer to combine stems:
+            words = custom_lemmatizer(text)
+            # send the stemmed text to our custom tokenizer for the matrix.
+            tfidf_matrix = tfidf_vectorizer.fit_transform(custom_tokenizer(words))
+            
             tokens = tfidf_vectorizer.get_feature_names_out()
 
 			# Debugging functions used in design: 
@@ -176,7 +208,8 @@ def main():
     # Crawler Starts here to begin searching for what we want.
     seed = "https://www.cpp.edu/engineering/ce/index.shtml "
     want = crawl(seed)
-    
+
+
 	# Connect to the database we specify in the connectionDataBase method above.
 	# Define name of table to be used.
     db = connectionDataBase()
