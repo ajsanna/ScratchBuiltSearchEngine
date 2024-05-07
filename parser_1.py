@@ -51,6 +51,7 @@ def custom_lemmatizer(text):
     wnl = WordNetLemmatizer()
     lemmatized = []
     for word in text:
+
         lemmatized.append(wnl.lemmatize(word))
 
     return lemmatized
@@ -67,13 +68,13 @@ def custom_tokenizer(text):
     #ENGLISH_STOP_WORDS = sklearn
     #nlp = spacy.load('en_core_web_sm')
     #text = nlp(text)
-    tokens = text.split()  # Split text into tokens
-    tokens = [token.lower() for token in tokens if token.lower() not in ENGLISH_STOP_WORDS]  # Remove stopwords
+    tok = text.split()  # Split text into tokens
+    toke = [token.lower() for token in tok if token.lower() not in ENGLISH_STOP_WORDS]  # Remove stopwords
     #doc = nlp(sentence)
     #lemmatized_tokens = [token.lemma_ for token in doc]
-    tokens = custom_lemmatizer(tokens)
+    toks = custom_lemmatizer(toke)
 
-    return tokens
+    return toks
 
 
 '''
@@ -128,7 +129,7 @@ def run(db, url):
             # send the stemmed text to our custom tokenizer for the matrix.
             tfidf_matrix = tfidf_vectorizer.fit_transform(custom_tokenizer(text))
             
-            tokens = tfidf_vectorizer.get_feature_names_out()
+            tokens = tfidf_vectorizer.get_feature_names_out(custom_tokenizer(text))
 
 			# Debugging functions used in design: 
             #print(name)
