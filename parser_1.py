@@ -14,8 +14,10 @@ Overall Description:
 # Imports
 
 import nltk
-nltk.download('wordnet')
+nltk.download('punkt')
 from nltk.stem import WordNetLemmatizer
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
 import spacy
 from urllib.error import HTTPError, URLError
 from bs4 import BeautifulSoup
@@ -24,6 +26,9 @@ from urllib.request import urlopen
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 from pymongo import MongoClient
+
+stemmer = PorterStemmer()
+custom_stopwords = stopwords.words('english')
 
 '''
 ConnectionDataBase serves to connect our program with a local database to store data
@@ -55,6 +60,14 @@ def custom_lemmatizer(text):
         lemmatized.append(wnl.lemmatize(word))
 
     return lemmatized
+
+#implemented by ryan - new lemmatizer using NLTK
+def tokenize_and_stem(text):
+    tokens = nltk.word_tokenize(text)
+    stemmed_tokens = [stemmer.stem(token)for token in tokens if token.lower() not in custom_stopwords]
+    print(tokens)
+    print(stemmed_tokens)
+    return stemmed_tokens
 
 
 '''
@@ -120,16 +133,20 @@ def run(db, url):
             html = urlopen(name)
             soup = BeautifulSoup(html.read(), 'html.parser')
             text = soup.find("main", class_="container").get_text()
+            text = re.sub(r'[^\w\s]', '', text)
+
             #tokenized_text = custom_tokenizer(text)
-            
+
 			# TFIDF Calculations and tokenization for data storage in next steps: 
-            tfidf_vectorizer = TfidfVectorizer(stop_words = 'english')
+            vectorizer = TfidfVectorizer(tokenizer=tokenize_and_stem)
             # call custom lemmatizer to combine stems:
             #words = custom_lemmatizer(text)
             # send the stemmed text to our custom tokenizer for the matrix.
-            tfidf_matrix = tfidf_vectorizer.fit_transform(custom_tokenizer(text))
-            
-            tokens = tfidf_vectorizer.get_feature_names_out(custom_tokenizer(text))
+            #tfidf_matrix = vectorizer.fit_transform(custom_tokenizer([text]))
+            x = vectorizer.fit_transform([text])
+
+            tokens = vectorizer.get_feature_names_out()
+            #print(tfidf_matrix.shape)
 
 			# Debugging functions used in design: 
             #print(name)

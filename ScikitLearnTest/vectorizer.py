@@ -4,12 +4,7 @@ import nltk
 nltk.download('punkt')
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
-courpus = [
-    'this is document one map',
-    'this is the second document mapping',
-    'and this is the third one maps.',
-    'Is this the first document documents and document',
-]
+courpus = [ 'this is document one map this is the second document mapping, and this is the third one maps.,Is this the first document documents and document']
 stemmer = PorterStemmer()
 custom_stopwords = stopwords.words('english')
 def tokenize_and_stem(text):
