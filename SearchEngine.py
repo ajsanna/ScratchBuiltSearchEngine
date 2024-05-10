@@ -104,9 +104,18 @@ def main():
         if query not in quitwords:
             results = search_engine(query, tfidf_matrix, documents, vectorizer)
             paged_results = page_results(results, 1)
-
+            count = 1
             for res in paged_results:
-                print(res['name'])
+                print(str(count) + " " + str(res['name']))
+                words = res['tokens']
+                words = nltk.word_tokenize(words)
+                output = "   "
+                for i in range(50):
+                    output = output + " " + words[i]
+                output = output + "..."
+                print(output)
+                print()
+                count += 1
             print("-"* 100)
         else:
             run = 0

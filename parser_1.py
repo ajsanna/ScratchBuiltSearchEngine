@@ -54,7 +54,7 @@ def run(db, url):
 	# define num_entries to keep track of how many successful entries we make into DB.
 	# we also had to define a collected set so that we avoided repeat entries.
     professor_info = soup.find_all('div', class_='col-md directory-listing')
-    num_entries = 1
+    num_entries = 0
     names_collected = []
     
     #cycle through all professors found on main page
@@ -62,6 +62,7 @@ def run(db, url):
         # finds personal website link for each professor.
         # Using class and regex function we narrowed down where to find every link. 
         name_element = professor.find('span',class_= 'sr-only', string = re.compile("https"))
+
         if name_element in names_collected:
             continue
         names_collected.append(name_element)
@@ -86,10 +87,7 @@ def run(db, url):
         professor_doc = {
             "name": name,
             "tokens": tokens
-            # "office": office,
-            # "phone": phone,
-            # "email": email,
-            # "website": website
+
         }
         
 		# This line sends the document object to the createDocument Method. 
