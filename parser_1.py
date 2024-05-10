@@ -2,7 +2,7 @@
 # Names: 		Alexander Sanna, Ryan Larson, Parth Singh,
 #				Priyanshu Shekhar, Christian Williams
 # Due: 			May 15th, 2024
-# Hours 		spent: ~6
+# Hours 		spent: ~10
 
 '''
 Overall Description: 
@@ -10,25 +10,12 @@ Overall Description:
 	Recommender System. All methods indicate respective functionality through comments.
 '''
 
-
 # Imports
-
-import nltk
-nltk.download('punkt')
-from nltk.stem import WordNetLemmatizer
-from nltk.corpus import stopwords
-from nltk.stem import PorterStemmer
-import spacy
 from urllib.error import HTTPError, URLError
 from bs4 import BeautifulSoup
 import re
 from urllib.request import urlopen
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 from pymongo import MongoClient
-
-stemmer = PorterStemmer()
-custom_stopwords = stopwords.words('english')
 
 '''
 ConnectionDataBase serves to connect our program with a local database to store data
@@ -40,7 +27,6 @@ def connectionDataBase():
     db = client["Final_Project"]
     return db
 
-
 '''
 CreateDocument serves to create and store all documents we intend to keep in the database. 
 This will insert the data into the table on mongoDB. 
@@ -49,56 +35,14 @@ def createDocument(col,doc):
     insert_result = col.insert_one(doc)
     return
 
-'''
-This is our own custom built lemmatizer to combine stem words. it works by using a prebuilt model via spAcy. 
-'''
-def custom_lemmatizer(text):
-    wnl = WordNetLemmatizer()
-    lemmatized = []
-    for word in text:
-
-        lemmatized.append(wnl.lemmatize(word))
-
-    return lemmatized
-
-#implemented by ryan - new lemmatizer using NLTK
-def tokenize_and_stem(text):
-    tokens = nltk.word_tokenize(text)
-    stemmed_tokens = [stemmer.stem(token)for token in tokens if token.lower() not in custom_stopwords]
-    print(tokens)
-    print(stemmed_tokens)
-    return stemmed_tokens
-
-
-'''
-We could not get the SK-Learn tokenizer to work the way we intended it to, so 
-we designed our own. This tokenizer works by taking in the text from any given website,
-splitting into dedicated words, and removing all stopwords using the SK learn pre-defined
-stopword library. 
-'''
-
-def custom_tokenizer(text):
-    #ENGLISH_STOP_WORDS = sklearn
-    #nlp = spacy.load('en_core_web_sm')
-    #text = nlp(text)
-    tok = text.split()  # Split text into tokens
-    toke = [token.lower() for token in tok if token.lower() not in ENGLISH_STOP_WORDS]  # Remove stopwords
-    #doc = nlp(sentence)
-    #lemmatized_tokens = [token.lemma_ for token in doc]
-    toks = custom_lemmatizer(toke)
-
-    return toks
-
 
 '''
 This is the main scraping method. 
 
 This is where we locate the desired URL. Process all data we want and store the 
 data we collect as entries in our mongoDB database. The data is stored as key-value sets
-where the key is the professor website URL's and the values are the tokenized String values
-found on said website. We also store a TF-IDF matrix here to keep track of how unique 
-specific terms are for recommender system implementation later on. 
-
+where the key is the professor website URL's and the value is the String value
+found on said website representing all text on the page.  
 '''
 def run(db, url):
     global name, tokens		# Global Variables used throughout 
@@ -123,42 +67,25 @@ def run(db, url):
         names_collected.append(name_element)
         
         if name_element:
-            # If we have found a website: Store the URL as name
+            # If we have found a website: Store the URL as name, increment counter
             name = name_element.text.strip()
             num_entries += 1
             
             # opens the personal website to parse in the next steps
             # Uses beautiful soup to read and parse the HTML. 
-            # Specifying class= container allows us to access ONLY relevant text. 
+            # Specifying class = container allows us to access ONLY relevant text.
             html = urlopen(name)
             soup = BeautifulSoup(html.read(), 'html.parser')
-            text = soup.find("main", class_="container").get_text()
-            text = re.sub(r'[^\w\s]', '', text)
+            raw_text = soup.find("main", class_="container").get_text()
+            text = re.sub(r'[^\w\s]', '', raw_text)
 
-            #tokenized_text = custom_tokenizer(text)
-
-			# TFIDF Calculations and tokenization for data storage in next steps: 
-            vectorizer = TfidfVectorizer(tokenizer=tokenize_and_stem)
-            # call custom lemmatizer to combine stems:
-            #words = custom_lemmatizer(text)
-            # send the stemmed text to our custom tokenizer for the matrix.
-            #tfidf_matrix = vectorizer.fit_transform(custom_tokenizer([text]))
-            x = vectorizer.fit_transform([text])
-
-            tokens = vectorizer.get_feature_names_out()
-            #print(tfidf_matrix.shape)
-
-			# Debugging functions used in design: 
-            #print(name)
-            #print(tokens)
-            #print(tfidf_matrix)
-            #print()
+            tokens = text
 
 		# Create Document using python object syntax.
 		# Specified attributes are name: Website URL, tokens: all words found on website
         professor_doc = {
             "name": name,
-            "tokens": tokens.tolist()
+            "tokens": tokens
             # "office": office,
             # "phone": phone,
             # "email": email,
