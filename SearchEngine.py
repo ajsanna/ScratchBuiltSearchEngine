@@ -1,4 +1,3 @@
-
 '''
 Search Engine Program Frontend Terminal Application
 By: Alexander Sanna
@@ -23,8 +22,21 @@ Description:
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import nltk
+import ssl
 from pymongo import MongoClient
+
+# Create SSL context for NLTK downloads
+try:
+    _create_unverified_https_context = ssl._create_unverified_context
+except AttributeError:
+    pass
+else:
+    ssl._create_default_https_context = _create_unverified_https_context
+
+# Download required NLTK data
 nltk.download('punkt')
+nltk.download('stopwords')
+
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 
@@ -38,8 +50,9 @@ custom_stopwords = stopwords.words('english')
     Returns processed input in the form of a String array. 
 '''
 def tokenize_and_stem(text):
-    tokens = nltk.word_tokenize(text)
-    stemmed_tokens = [stemmer.stem(token)for token in tokens if token.lower() not in custom_stopwords]
+    # Simple word splitting and stemming
+    words = text.lower().split()
+    stemmed_tokens = [stemmer.stem(word) for word in words if word not in custom_stopwords]
     return stemmed_tokens
 
 '''
@@ -107,12 +120,8 @@ def main():
             count = 1
             for res in paged_results:
                 print(str(count) + " " + str(res['name']))
-                words = res['tokens']
-                words = nltk.word_tokenize(words)
-                output = "   "
-                for i in range(50):
-                    output = output + " " + words[i]
-                output = output + "..."
+                words = res['tokens'].split()[:50]  # Take first 50 words
+                output = "   " + " ".join(words) + "..."
                 print(output)
                 print()
                 count += 1
